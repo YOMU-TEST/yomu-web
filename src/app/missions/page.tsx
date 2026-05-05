@@ -137,6 +137,6 @@ export default function MissionsPage() {
           </div>
         )}
       </main>
-    </NotificationProvider>
+    </div>
   );
 }
