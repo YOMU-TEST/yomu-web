@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 interface Clan {
   id: string;
@@ -13,13 +14,16 @@ interface Clan {
   leaderId: string;
   leaderName: string;
   memberCount: number;
+  myRole?: string;
 }
 
 export default function ClansPage() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [clans, setClans] = useState<Clan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -35,16 +39,90 @@ export default function ClansPage() {
         if (res.ok) {
           const data = await res.json();
           setClans(data);
+        } else if (res.status === 401) {
+          showToast('Session expired, silakan login ulang', 'error');
+          router.push('/login');
         }
       } catch (err) {
         console.error('Failed to fetch clans:', err);
+        showToast('Gagal memuat clan', 'error');
       } finally {
         setLoading(false);
       }
     };
 
     fetchClans();
-  }, [user, token, router]);
+  }, [user, token, router, showToast]);
+
+  const handleJoin = async (clanId: string) => {
+    if (actionLoading) return;
+    setActionLoading(clanId);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/clans/${clanId}/join`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        showToast('Berhasil bergabung dengan clan!', 'success');
+        router.push('/clans');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Gagal bergabung', 'error');
+      }
+    } catch {
+      showToast('Error koneksi', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLeave = async (clanId: string) => {
+    if (actionLoading) return;
+    if (!confirm('Yakin ingin keluar dari clan ini?')) return;
+
+    setActionLoading(clanId);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/clans/${clanId}/leave`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        showToast('Berhasil keluar dari clan', 'success');
+        router.push('/clans');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Gagal keluar clan', 'error');
+      }
+    } catch {
+      showToast('Error koneksi', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (clanId: string) => {
+    if (actionLoading) return;
+    if (!confirm('Yakin ingin menghapus clan ini? Semua anggota akan keluar.')) return;
+
+    setActionLoading(clanId);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/clans/${clanId}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        showToast('Clan berhasil dihapus', 'success');
+        router.push('/clans');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Gagal menghapus clan', 'error');
+      }
+    } catch {
+      showToast('Error koneksi', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   if (!user) return null;
 
@@ -103,23 +181,24 @@ export default function ClansPage() {
                       Skor: {clan.totalScore.toFixed(0)}
                     </p>
                   </div>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch(
-                          `${process.env.NEXT_PUBLIC_API_URL}/api/clans/${clan.id}/join`,
-                          { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
-                        );
-                        if (res.ok) router.push('/clans');
-                        else alert('Gagal bergabung');
-                      } catch {
-                        alert('Error');
-                      }
-                    }}
-                    className="px-4 py-2 border border-primary-600 text-primary-600 text-sm rounded-lg hover:bg-primary-50"
-                  >
-                    Gabung
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => handleJoin(clan.id)}
+                      disabled={actionLoading !== null}
+                      className="px-4 py-2 border border-primary-600 text-primary-600 text-sm rounded-lg hover:bg-primary-50 disabled:opacity-50"
+                    >
+                      Gabung
+                    </button>
+                    {clan.leaderId === user.id && (
+                      <button
+                        onClick={() => handleDelete(clan.id)}
+                        disabled={actionLoading !== null}
+                        className="px-4 py-2 border border-red-500 text-red-500 text-sm rounded-lg hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
