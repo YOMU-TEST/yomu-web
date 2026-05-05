@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Reading {
   id: string;
@@ -129,7 +130,9 @@ export default function AdminReadingsPage() {
                   <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
                     {r.category?.name || 'Tanpa kategori'}
                   </span>
-                  <h3 className="font-semibold mt-1">{r.title}</h3>
+                  <h3 className="font-semibold mt-1">
+                    <Link href={`/admin/readings/${r.id}`} className="hover:underline">{r.title}</Link>
+                  </h3>
                   <p className="text-sm text-slate-500 mt-1 line-clamp-2">{r.content}</p>
                 </div>
                 <button
