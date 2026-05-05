@@ -3,22 +3,33 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/Toast';
+
+interface Season {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
 
 export default function AdminDashboard() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [activeSeason, setActiveSeason] = useState<Season | null>(null);
+  const [endingSeason, setEndingSeason] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
 
     const fetchStats = async () => {
       try {
-        const [readingsRes, missionsRes, clansRes] = await Promise.all([
+        const [readingsRes, missionsRes, clansRes, seasonRes] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/readings`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/missions`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clans`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/seasons/active`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
 
         setStats({
@@ -26,6 +37,10 @@ export default function AdminDashboard() {
           missions: missionsRes.ok ? (await missionsRes.json()).length : 0,
           clans: clansRes.ok ? (await clansRes.json()).length : 0,
         });
+
+        if (seasonRes.ok) {
+          setActiveSeason(await seasonRes.json());
+        }
       } catch (err) {
         console.error('Failed to fetch stats:', err);
       } finally {
@@ -35,6 +50,30 @@ export default function AdminDashboard() {
 
     fetchStats();
   }, [user, token]);
+
+  const handleEndSeason = async () => {
+    if (!activeSeason || endingSeason) return;
+    if (!confirm(`Akhiri season "${activeSeason.name}"? Clan akan dipromosi/demoti sesuai ranking.`)) return;
+
+    setEndingSeason(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/seasons/${activeSeason.id}/end`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        showToast('Season berhasil diakhiri!', 'success');
+        setActiveSeason(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Gagal mengakhiri season', 'error');
+      }
+    } catch {
+      showToast('Error koneksi', 'error');
+    } finally {
+      setEndingSeason(false);
+    }
+  };
 
   if (!user || user.role !== 'admin') return null;
 
@@ -63,6 +102,20 @@ export default function AdminDashboard() {
               <p className="text-3xl font-bold">{card.value}</p>
             </a>
           ))}
+        </div>
+      )}
+
+      {activeSeason && (
+        <div className="mt-8 p-6 bg-amber-50 rounded-xl border border-amber-200">
+          <h3 className="font-semibold mb-2">Season Aktif</h3>
+          <p className="text-lg">{activeSeason.name}</p>
+          <button
+            onClick={handleEndSeason}
+            disabled={endingSeason}
+            className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {endingSeason ? 'Mengakhiri...' : 'Akhiri Season'}
+          </button>
         </div>
       )}
 
