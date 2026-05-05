@@ -54,7 +54,6 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/login',
-    callback: '/api/auth/callback/google',
   },
 });
 
