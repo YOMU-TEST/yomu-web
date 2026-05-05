@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 interface Mission {
   id: string;
@@ -20,8 +21,10 @@ interface Mission {
 export default function MissionsPage() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -33,21 +36,54 @@ export default function MissionsPage() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/missions/${user.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+          { headers: { Authorization: `Bearer ${token}` }
+        });
         if (res.ok) {
           const data = await res.json();
           setMissions(data);
+        } else if (res.status === 401) {
+          showToast('Session expired, silakan login ulang', 'error');
+          router.push('/login');
         }
       } catch (err) {
         console.error('Failed to fetch missions:', err);
+        showToast('Gagal memuat misi', 'error');
       } finally {
         setLoading(false);
       }
     };
 
     if (user?.id) fetchMissions();
-  }, [user, token, router]);
+  }, [user, token, router, showToast]);
+
+  const handleClaim = async (missionId: string) => {
+    if (claimingId) return;
+    setClaimingId(missionId);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/missions/${missionId}/claim`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      if (res.ok) {
+        showToast('Reward berhasil diklaim! +XP', 'success');
+        // Refresh missions
+        const updated = missions.map(m =>
+          m.id === missionId ? { ...m, claimed: true } : m
+        );
+        setMissions(updated);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Gagal klaim reward', 'error');
+      }
+    } catch (err) {
+      showToast('Error koneksi saat klaim', 'error');
+    } finally {
+      setClaimingId(null);
+    }
+  };
 
   if (!user) return null;
 
@@ -130,6 +166,15 @@ export default function MissionsPage() {
                         style={{ width: `${Math.min((progress / target) * 100, 100)}%` }}
                       />
                     </div>
+                    {completed && !claimed && (
+                      <button
+                        onClick={() => handleClaim(mission.id)}
+                        disabled={claimingId === mission.id}
+                        className="mt-3 w-full py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50"
+                      >
+                        {claimingId === mission.id ? 'Mengklaim...' : 'Klaim Reward'}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
