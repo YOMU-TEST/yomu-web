@@ -26,9 +26,9 @@ const handler = NextAuth({
 
           if (res.ok) {
             const data = await res.json();
-            user.token = data.token;
-            user.userId = data.userId;
-            user.role = data.role;
+            (user as any).token = data.token;
+            (user as any).userId = data.userId;
+            (user as any).role = data.role;
           }
         } catch (err) {
           console.error('Google auth failed:', err);
