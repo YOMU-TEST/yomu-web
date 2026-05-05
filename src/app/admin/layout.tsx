@@ -13,11 +13,12 @@ const adminNav = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -25,9 +26,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (user.role !== 'admin') {
       router.push('/');
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
-  if (!user || user.role !== 'admin') return null;
+  if (isLoading || !user || user.role !== 'admin') return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
