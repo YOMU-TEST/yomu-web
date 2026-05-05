@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 interface Question {
   id: string;
@@ -26,6 +27,7 @@ export default function ReadingDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { showToast } = useToast();
 
   const [reading, setReading] = useState<Reading | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -33,6 +35,7 @@ export default function ReadingDetailPage() {
   const [answers, setAnswers] = useState<number[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -61,15 +64,23 @@ export default function ReadingDetailPage() {
         }
       } catch (err) {
         console.error('Failed to fetch:', err);
+        showToast('Gagal memuat data', 'error');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user, token, id, router]);
+  }, [user, token, id, router, showToast]);
 
   const submitQuiz = async () => {
+    if (isSubmitting) return;
+    if (answers.some((a) => a === -1)) {
+      showToast('Jawab semua pertanyaan terlebih dahulu', 'warning');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/readings/${id}/submit`,
@@ -82,13 +93,26 @@ export default function ReadingDetailPage() {
           body: JSON.stringify({ readingId: id, answers }),
         }
       );
+
       if (res.ok) {
         const data = await res.json();
         setResult(data);
         setStep('result');
+        showToast('Kuis berhasil disubmit!', 'success');
+      } else if (res.status === 400) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Kuis sudah pernah disubmit', 'error');
+      } else if (res.status === 401) {
+        showToast('Session expired, silakan login ulang', 'error');
+        router.push('/login');
+      } else {
+        showToast('Gagal submit kuis', 'error');
       }
     } catch (err) {
       console.error('Failed to submit:', err);
+      showToast('Error koneksi saat submit kuis', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -168,10 +192,10 @@ export default function ReadingDetailPage() {
               </button>
               <button
                 onClick={submitQuiz}
-                disabled={answers.some((a) => a === -1)}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
+                disabled={isSubmitting || answers.some((a) => a === -1)}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Submit Kuis
+                {isSubmitting ? 'Mengirim...' : 'Submit Kuis'}
               </button>
             </div>
           </div>
