@@ -5,6 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+interface SeasonInfo {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+}
+
 interface LeaderboardEntry {
   clanId: string;
   clanName: string;
@@ -19,6 +27,7 @@ export default function LeaderboardPage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [season, setSeason] = useState<SeasonInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,12 +47,25 @@ export default function LeaderboardPage() {
         }
       } catch (err) {
         console.error('Failed to fetch leaderboard:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchLeaderboard();
+    const fetchActiveSeason = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/seasons/active`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSeason(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch active season:', err);
+      }
+    };
+
+    Promise.all([fetchLeaderboard(), fetchActiveSeason()])
+      .finally(() => setLoading(false));
   }, [user, token, router]);
 
   if (!user) return null;
@@ -63,7 +85,14 @@ export default function LeaderboardPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8">
-        <h2 className="text-2xl font-bold mb-6">Leaderboard Liga</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Leaderboard Liga</h2>
+          {season && (
+            <div className="text-sm text-slate-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
+              Season: <span className="font-medium text-blue-700">{season.name}</span>
+            </div>
+          )}
+        </div>
 
         {loading ? (
           <p className="text-slate-500">Memuat...</p>

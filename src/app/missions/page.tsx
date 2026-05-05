@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { NotificationProvider } from '@/context/NotificationContext';
+import NotificationBell from '@/components/NotificationBell';
+import NotificationPanel from '@/components/NotificationPanel';
 
 interface Mission {
   id: string;
@@ -60,6 +63,7 @@ export default function MissionsPage() {
   };
 
   return (
+    <NotificationProvider userId={user?.id || ''} token={token || ''}>
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
@@ -69,6 +73,8 @@ export default function MissionsPage() {
             <Link href="/missions" className="text-sm text-primary-600 font-medium">Misi</Link>
             <Link href="/achievements" className="text-sm text-slate-600">Achievements</Link>
             <Link href="/profile" className="text-sm text-slate-600">Profil</Link>
+            <NotificationBell />
+            <NotificationPanel />
           </nav>
         </div>
       </header>
@@ -137,6 +143,6 @@ export default function MissionsPage() {
           </div>
         )}
       </main>
-    </div>
+    </NotificationProvider>
   );
 }
