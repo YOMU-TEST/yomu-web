@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { SessionProvider } from '@/context/SessionContext';
+import { ToastProvider } from '@/components/Toast';
 
 export const metadata: Metadata = {
   title: 'Yomu - Belajar Literasi Informasi',
@@ -18,7 +19,9 @@ export default function RootLayout({
       <body className="min-h-screen bg-slate-50">
         <SessionProvider>
           <AuthProvider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </AuthProvider>
         </SessionProvider>
       </body>
