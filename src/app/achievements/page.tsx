@@ -71,12 +71,11 @@ export default function AchievementsPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {achievements.map((ach) => {
               const isUnlocked = ach.unlocked_at !== null;
-              const isVisible = ach.is_visible !== false;
               return (
                 <div
                   key={ach.id}
                   className={`p-4 bg-white rounded-xl border flex items-center gap-4 ${
-                    isUnlocked && isVisible ? '' : 'opacity-50'
+                    isUnlocked ? '' : 'opacity-50'
                   }`}
                 >
                   <div className="text-4xl">{isUnlocked ? '🏆' : '🔒'}</div>
