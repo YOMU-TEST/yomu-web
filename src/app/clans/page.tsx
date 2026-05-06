@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
+import Header from '@/components/Header';
 
 interface Clan {
   id: string;
@@ -18,7 +19,7 @@ interface Clan {
 }
 
 export default function ClansPage() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
   const [clans, setClans] = useState<Clan[]>([]);
@@ -26,6 +27,7 @@ export default function ClansPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -52,7 +54,13 @@ export default function ClansPage() {
     };
 
     fetchClans();
-  }, [user, token, router, showToast]);
+  }, [user, token, isLoading, router, showToast]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
+  }
+
+  if (!user) return null;
 
   const handleJoin = async (clanId: string) => {
     if (actionLoading) return;
@@ -124,21 +132,9 @@ export default function ClansPage() {
     }
   };
 
-  if (!user) return null;
-
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-primary-600">Yomu</h1>
-          <nav className="flex items-center gap-4">
-            <Link href="/readings" className="text-sm text-slate-600">Bacaan</Link>
-            <Link href="/clans" className="text-sm text-primary-600 font-medium">Clan</Link>
-            <Link href="/leaderboard" className="text-sm text-slate-600">Leaderboard</Link>
-            <Link href="/profile" className="text-sm text-slate-600">Profil</Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="flex items-center justify-between mb-6">

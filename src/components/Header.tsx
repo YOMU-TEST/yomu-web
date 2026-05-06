@@ -18,8 +18,17 @@ export default function Header() {
               <Link href="/readings" className="text-sm text-slate-600 hover:text-primary-600">
                 Bacaan
               </Link>
+              <Link href="/clans" className="text-sm text-slate-600 hover:text-primary-600">
+                Clan
+              </Link>
+              <Link href="/leaderboard" className="text-sm text-slate-600 hover:text-primary-600">
+                Leaderboard
+              </Link>
               <Link href="/achievements" className="text-sm text-slate-600 hover:text-primary-600">
                 Achievements
+              </Link>
+              <Link href="/missions" className="text-sm text-slate-600 hover:text-primary-600">
+                Misi
               </Link>
               <Link href="/profile" className="text-sm text-slate-600 hover:text-primary-600">
                 Profil
