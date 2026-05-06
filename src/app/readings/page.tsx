@@ -71,7 +71,7 @@ export default function ReadingsPage() {
               <Link
                 key={reading.id}
                 href={`/readings/${reading.id}`}
-                className="p-6 bg-white rounded-xl border hover:border-primary-500 transition-colors"
+                className="block p-6 bg-white rounded-xl border hover:border-primary-500 transition-colors"
               >
                 <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-1 rounded">
                   {reading.category?.name || 'Umum'}
