@@ -10,9 +10,10 @@ interface Achievement {
   name: string;
   description: string;
   milestone: number;
-  icon_url: string | null;
-  unlocked_at: string | null;
-  is_visible: boolean | null;
+  iconUrl: string | null;
+  unlocked: boolean;
+  unlockedAt: string | null;
+  visible: boolean;
 }
 
 export default function AchievementsPage() {
@@ -31,7 +32,7 @@ export default function AchievementsPage() {
     const fetchAchievements = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/achievements/${user.id}`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/achievements`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (res.ok) {
@@ -70,7 +71,7 @@ export default function AchievementsPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {achievements.map((ach) => {
-              const isUnlocked = ach.unlocked_at !== null;
+              const isUnlocked = ach.unlocked;
               return (
                 <div
                   key={ach.id}
@@ -82,8 +83,8 @@ export default function AchievementsPage() {
                   <div>
                     <h3 className="font-semibold">{ach.name}</h3>
                     <p className="text-sm text-slate-500">{ach.description || `Milestone: ${ach.milestone}`}</p>
-                    {ach.unlocked_at && (
-                      <p className="text-xs text-slate-400 mt-1">Di-unlock: {new Date(ach.unlocked_at).toLocaleDateString('id-ID')}</p>
+                    {ach.unlockedAt && (
+                      <p className="text-xs text-slate-400 mt-1">Di-unlock: {new Date(ach.unlockedAt).toLocaleDateString('id-ID')}</p>
                     )}
                   </div>
                 </div>
