@@ -147,9 +147,14 @@ export default function ReadingDetailPage() {
                     );
                     if (res.ok) {
                       showToast('Bacaan ditandai selesai!', 'success');
+                    } else if (res.status === 409) {
+                      showToast('Bacaan sudah pernah ditandai selesai', 'info');
+                    } else {
+                      showToast('Gagal menandai bacaan', 'error');
                     }
                   } catch (err) {
                     console.error('Failed to mark reading complete:', err);
+                    showToast('Gagal menandai bacaan', 'error');
                   }
                 }}
                 className="px-6 py-3 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300"
