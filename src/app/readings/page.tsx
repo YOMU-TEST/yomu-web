@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Header from '@/components/Header';
 
 interface Reading {
   id: string;
@@ -13,12 +13,13 @@ interface Reading {
 }
 
 export default function ReadingsPage() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
   const [readings, setReadings] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -41,53 +42,45 @@ export default function ReadingsPage() {
     };
 
     fetchReadings();
-  }, [user, token, router]);
+  }, [user, token, isLoading, router]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
+  }
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-primary-600">Yomu</h1>
-          <nav className="flex items-center gap-4">
-            <Link href="/readings" className="text-sm text-primary-600 font-medium">Bacaan</Link>
-            <Link href="/achievements" className="text-sm text-slate-600">Achievements</Link>
-            <Link href="/profile" className="text-sm text-slate-600">Profil</Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-8">
-        <h2 className="text-2xl font-bold mb-6">Pilih Bacaan</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Pilih Bacaan</h2>
+        </div>
+
         {loading ? (
           <p className="text-slate-500">Memuat...</p>
         ) : readings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-slate-500">Belum ada bacaan tersedia.</p>
+          <div className="text-center py-12 bg-white rounded-xl border">
+            <p className="text-slate-500">Belum ada bacaan.</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
             {readings.map((reading) => (
-              <div
+              <Link
                 key={reading.id}
-                className="p-6 bg-white rounded-xl border hover:border-primary-300 transition-colors"
+                href={`/readings/${reading.id}`}
+                className="p-6 bg-white rounded-xl border hover:border-primary-500 transition-colors"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-1 rounded">
-                      {reading.category?.name || 'Umum'}
-                    </span>
-                    <h3 className="text-lg font-semibold mt-2">{reading.title}</h3>
-                  </div>
-                  <button
-                    onClick={() => router.push(`/readings/${reading.id}`)}
-                    className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700"
-                  >
-                    Baca
-                  </button>
-                </div>
-              </div>
+                <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-1 rounded">
+                  {reading.category?.name || 'Umum'}
+                </span>
+                <h3 className="text-lg font-semibold mt-2">{reading.title}</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {new Date(reading.createdAt).toLocaleDateString('id-ID')}
+                </p>
+              </Link>
             ))}
           </div>
         )}
