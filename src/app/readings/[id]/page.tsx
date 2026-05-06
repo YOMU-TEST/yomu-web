@@ -134,7 +134,28 @@ export default function ReadingDetailPage() {
             <div className="prose max-w-none">
               <p className="whitespace-pre-wrap">{reading.content}</p>
             </div>
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-end gap-4">
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      `${process.env.NEXT_PUBLIC_API_URL}/api/readings/${id}/complete`,
+                      {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` },
+                      }
+                    );
+                    if (res.ok) {
+                      showToast('Bacaan ditandai selesai!', 'success');
+                    }
+                  } catch (err) {
+                    console.error('Failed to mark reading complete:', err);
+                  }
+                }}
+                className="px-6 py-3 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300"
+              >
+                Selesai Baca
+              </button>
               <button
                 onClick={() => setStep('quiz')}
                 className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
