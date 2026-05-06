@@ -1,20 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Header from '@/components/Header';
 
 export default function ProfilePage() {
-  const { user, logout, token } = useAuth();
+  const { user, logout, token, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && authLoading) return;
+    if (!mounted) return;
+    if (!user) {
+      router.push('/login');
+    }
+  }, [authLoading, mounted, user, router]);
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || '');
+    }
+  }, [user]);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
@@ -47,7 +66,7 @@ export default function ProfilePage() {
       }
     }
 
-    setIsLoading(true);
+    setIsSaving(true);
 
     try {
       const body: { displayName: string; password?: string; updatePassword?: boolean } = {
@@ -73,45 +92,26 @@ export default function ProfilePage() {
         throw new Error(data.message || 'Failed to update profile');
       }
 
-      const updatedUser = await res.json();
-      // Update local storage with new display name
-      const storedUser = localStorage.getItem('yomu_user');
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        parsed.displayName = updatedUser.displayName;
-        localStorage.setItem('yomu_user', JSON.stringify(parsed));
-      }
-
       setSuccess('Profile updated successfully');
       setIsEditing(false);
       setPassword('');
       setConfirmPassword('');
-      // Refresh the page to show updated data
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  if (!user) {
-    router.push('/login');
-    return null;
+  if (!mounted || authLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
   }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-primary-600">Yomu</h1>
-          <nav className="flex items-center gap-4">
-            <Link href="/readings" className="text-sm text-slate-600">Bacaan</Link>
-            <Link href="/achievements" className="text-sm text-slate-600">Achievements</Link>
-            <Link href="/profile" className="text-sm text-primary-600 font-medium">Profil</Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-2xl px-4 py-8">
         <div className="bg-white rounded-xl border p-8">
@@ -201,14 +201,14 @@ export default function ProfilePage() {
                 <div className="pt-4 flex gap-3">
                   <button
                     onClick={handleSave}
-                    disabled={isLoading}
+                    disabled={isSaving}
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
                   >
-                    {isLoading ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button
                     onClick={handleEditToggle}
-                    disabled={isLoading}
+                    disabled={isSaving}
                     className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                   >
                     Cancel

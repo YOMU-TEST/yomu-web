@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
 import { useToast } from '@/components/Toast';
+import Header from '@/components/Header';
 
 interface Question {
   id: string;
@@ -23,7 +23,7 @@ interface Reading {
 type Step = 'reading' | 'quiz' | 'result';
 
 export default function ReadingDetailPage() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -38,6 +38,7 @@ export default function ReadingDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -121,11 +122,7 @@ export default function ReadingDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4">
-          <h1 className="text-xl font-bold text-primary-600">Yomu</h1>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         {step === 'reading' && (

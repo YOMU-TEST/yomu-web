@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useToast } from '@/components/Toast';
+import Header from '@/components/Header';
 
 interface Mission {
   id: string;
@@ -19,7 +19,7 @@ interface Mission {
 }
 
 export default function MissionsPage() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -27,6 +27,7 @@ export default function MissionsPage() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -53,8 +54,8 @@ export default function MissionsPage() {
       }
     };
 
-    if (user?.id) fetchMissions();
-  }, [user, token, router, showToast]);
+    fetchMissions();
+  }, [user, token, isLoading, router, showToast]);
 
   const handleClaim = async (missionId: string) => {
     if (claimingId) return;
@@ -85,6 +86,10 @@ export default function MissionsPage() {
     }
   };
 
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
+  }
+
   if (!user) return null;
 
   const getMissionStatus = (mission: Mission) => {
@@ -97,17 +102,7 @@ export default function MissionsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-primary-600">Yomu</h1>
-          <nav className="flex items-center gap-4">
-            <Link href="/readings" className="text-sm text-slate-600">Bacaan</Link>
-            <Link href="/missions" className="text-sm text-primary-600 font-medium">Misi</Link>
-            <Link href="/achievements" className="text-sm text-slate-600">Achievements</Link>
-            <Link href="/profile" className="text-sm text-slate-600">Profil</Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="flex items-center justify-between mb-6">
