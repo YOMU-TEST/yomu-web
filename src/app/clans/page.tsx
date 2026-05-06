@@ -23,6 +23,7 @@ export default function ClansPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const [clans, setClans] = useState<Clan[]>([]);
+  const [myClanId, setMyClanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -53,7 +54,24 @@ export default function ClansPage() {
       }
     };
 
+    const fetchMyClan = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clans/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMyClanId(data.id);
+        } else if (res.status === 404) {
+          setMyClanId(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch my clan:', err);
+      }
+    };
+
     fetchClans();
+    fetchMyClan();
   }, [user, token, isLoading, router, showToast]);
 
   if (isLoading) {
@@ -180,10 +198,10 @@ export default function ClansPage() {
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => handleJoin(clan.id)}
-                      disabled={actionLoading !== null}
+                      disabled={actionLoading !== null || myClanId !== null}
                       className="px-4 py-2 border border-primary-600 text-primary-600 text-sm rounded-lg hover:bg-primary-50 disabled:opacity-50"
                     >
-                      Gabung
+                      {myClanId ? 'Sudah Gabung' : 'Gabung'}
                     </button>
                     {clan.leaderId === user.id && (
                       <button
