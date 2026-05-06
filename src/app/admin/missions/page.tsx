@@ -129,7 +129,6 @@ export default function AdminMissionsPage() {
               >
                 <option value="reading">Reading</option>
                 <option value="quiz">Quiz</option>
-                <option value="accuracy">Accuracy</option>
               </select>
             </div>
             <div>
