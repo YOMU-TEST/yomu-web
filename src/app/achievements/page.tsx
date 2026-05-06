@@ -8,11 +8,11 @@ import Header from '@/components/Header';
 interface Achievement {
   id: string;
   name: string;
-  description: string | null;
+  description: string;
   milestone: number;
-  unlockedAt?: string;
-  unlocked?: boolean;
-  visible?: boolean;
+  icon_url: string | null;
+  unlocked_at: string | null;
+  is_visible: boolean | null;
 }
 
 export default function AchievementsPage() {
@@ -31,7 +31,7 @@ export default function AchievementsPage() {
     const fetchAchievements = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/achievements`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/achievements/${user.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (res.ok) {
@@ -70,18 +70,22 @@ export default function AchievementsPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {achievements.map((ach) => {
-              const isUnlocked = ach.unlocked || ach.visible === false;
+              const isUnlocked = ach.unlocked_at !== null;
+              const isVisible = ach.is_visible !== false;
               return (
                 <div
                   key={ach.id}
                   className={`p-4 bg-white rounded-xl border flex items-center gap-4 ${
-                    isUnlocked ? '' : 'opacity-50'
+                    isUnlocked && isVisible ? '' : 'opacity-50'
                   }`}
                 >
                   <div className="text-4xl">{isUnlocked ? '🏆' : '🔒'}</div>
                   <div>
                     <h3 className="font-semibold">{ach.name}</h3>
                     <p className="text-sm text-slate-500">{ach.description || `Milestone: ${ach.milestone}`}</p>
+                    {ach.unlocked_at && (
+                      <p className="text-xs text-slate-400 mt-1">Di-unlock: {new Date(ach.unlocked_at).toLocaleDateString('id-ID')}</p>
+                    )}
                   </div>
                 </div>
               );
