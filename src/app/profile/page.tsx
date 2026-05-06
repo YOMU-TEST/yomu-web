@@ -5,6 +5,31 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 
+interface UserProfile {
+  user: {
+    id: string;
+    username: string;
+    displayName: string;
+    role: string;
+  };
+  stats: {
+    readingsCompleted: number;
+    quizzesTaken: number;
+    averageAccuracy: number;
+  };
+  achievements: Array<{
+    id: string;
+    name: string;
+    unlockedAt: string;
+  }>;
+  clan: {
+    id: string;
+    name: string;
+    tier: string;
+    role: string;
+  } | null;
+}
+
 export default function ProfilePage() {
   const { user, logout, token, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -16,6 +41,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -34,6 +60,17 @@ export default function ProfilePage() {
       setDisplayName(user.displayName || '');
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && token) {
+      fetch(`${apiUrl}/api/users/${user.id}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => setProfileData(data))
+      .catch(err => console.error('Failed to fetch profile:', err));
+    }
+  }, [user, token, apiUrl]);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
@@ -132,6 +169,65 @@ export default function ProfilePage() {
               >
                 Edit
               </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {/* Stats Card */}
+            <div className="bg-white rounded-xl border p-6">
+              <h3 className="text-lg font-semibold mb-4">Statistik</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{profileData?.stats?.readingsCompleted || 0}</p>
+                  <p className="text-sm text-slate-500">Bacaan</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{profileData?.stats?.quizzesTaken || 0}</p>
+                  <p className="text-sm text-slate-500">Kuis</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{Math.round((profileData?.stats?.averageAccuracy || 0) * 100)}%</p>
+                  <p className="text-sm text-slate-500">Akurasi</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Achievements Card */}
+            <div className="bg-white rounded-xl border p-6">
+              <h3 className="text-lg font-semibold mb-4">Achievements ({profileData?.achievements?.length || 0})</h3>
+              {profileData?.achievements && profileData.achievements.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {profileData.achievements.map((ach) => (
+                    <div key={ach.id} className="p-3 bg-amber-50 rounded-lg">
+                      <p className="font-medium text-amber-800">{ach.name}</p>
+                      <p className="text-xs text-amber-600">{new Date(ach.unlockedAt).toLocaleDateString('id-ID')}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-500 text-sm">Belum ada achievement</p>
+              )}
+            </div>
+
+            {/* Clan Card */}
+            {profileData?.clan && (
+              <div className="bg-white rounded-xl border p-6">
+                <h3 className="text-lg font-semibold mb-4">Clan</h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{profileData.clan.name}</p>
+                    <p className="text-sm text-slate-500">Role: {profileData.clan.role}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded text-sm font-medium ${
+                    profileData.clan.tier === 'diamond' ? 'bg-purple-100 text-purple-700' :
+                    profileData.clan.tier === 'gold' ? 'bg-yellow-100 text-yellow-700' :
+                    profileData.clan.tier === 'silver' ? 'bg-gray-100 text-gray-700' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {profileData.clan.tier.toUpperCase()}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 
