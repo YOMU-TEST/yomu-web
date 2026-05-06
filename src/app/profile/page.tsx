@@ -61,6 +61,8 @@ export default function ProfilePage() {
     }
   }, [user]);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
+
   useEffect(() => {
     if (user && token) {
       fetch(`${apiUrl}/api/users/${user.id}/profile`, {
@@ -71,8 +73,6 @@ export default function ProfilePage() {
       .catch(err => console.error('Failed to fetch profile:', err));
     }
   }, [user, token, apiUrl]);
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
   const handleLogout = () => {
     logout();
