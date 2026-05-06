@@ -11,7 +11,8 @@ interface Achievement {
   description: string | null;
   milestone: number;
   unlockedAt?: string;
-  isUnlocked?: boolean;
+  unlocked?: boolean;
+  visible?: boolean;
 }
 
 export default function AchievementsPage() {
@@ -68,56 +69,23 @@ export default function AchievementsPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {achievements.map((ach) => (
-              <div
-                key={ach.id}
-                className={`p-4 bg-white rounded-xl border flex items-center gap-4 ${
-                  ach.isUnlocked ? '' : 'opacity-50'
-                }`}
-              >
-                <div className="text-4xl">{ach.isUnlocked ? '🏆' : '🔒'}</div>
-                <div>
-                  <h3 className="font-semibold">{ach.name}</h3>
-                  <p className="text-sm text-slate-500">{ach.description || `Milestone: ${ach.milestone}`}</p>
+            {achievements.map((ach) => {
+              const isUnlocked = ach.unlocked || ach.visible === false;
+              return (
+                <div
+                  key={ach.id}
+                  className={`p-4 bg-white rounded-xl border flex items-center gap-4 ${
+                    isUnlocked ? '' : 'opacity-50'
+                  }`}
+                >
+                  <div className="text-4xl">{isUnlocked ? '🏆' : '🔒'}</div>
+                  <div>
+                    <h3 className="font-semibold">{ach.name}</h3>
+                    <p className="text-sm text-slate-500">{ach.description || `Milestone: ${ach.milestone}`}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Header />
-
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <h2 className="text-2xl font-bold mb-6">Achievements</h2>
-        {loading ? (
-          <p className="text-slate-500">Memuat...</p>
-        ) : achievements.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border">
-            <p className="text-slate-500">Belum ada achievement.</p>
-            <p className="text-sm text-slate-400 mt-2">Selesaikan bacaan untuk membuka achievement!</p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {achievements.map((ach) => (
-              <div
-                key={ach.id}
-                className={`p-4 bg-white rounded-xl border flex items-center gap-4 ${
-                  ach.isUnlocked ? '' : 'opacity-50'
-                }`}
-              >
-                <div className="text-4xl">{ach.isUnlocked ? '🏆' : '🔒'}</div>
-                <div>
-                  <h3 className="font-semibold">{ach.name}</h3>
-                  <p className="text-sm text-slate-500">{ach.description || `Milestone: ${ach.milestone}`}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
