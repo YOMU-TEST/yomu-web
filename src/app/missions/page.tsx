@@ -10,9 +10,9 @@ interface Mission {
   id: string;
   title: string;
   description: string;
-  target_type: string;
-  target_count: number;
-  xp_reward: number;
+  targetType: string;
+  targetCount: number;
+  xpReward: number;
   progress: number | null;
   claimed: boolean | null;
   date: string | null;
@@ -94,7 +94,7 @@ export default function MissionsPage() {
 
   const getMissionStatus = (mission: Mission) => {
     const progress = mission.progress ?? 0;
-    const target = mission.target_count;
+    const target = mission.targetCount;
     const completed = progress >= target;
     const claimed = mission.claimed ?? false;
     return { progress, target, completed, claimed };
@@ -143,13 +143,13 @@ export default function MissionsPage() {
                       <p className="text-sm text-slate-500 mt-1">{mission.description}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-amber-500">+{mission.xp_reward} XP</div>
+                      <div className="text-lg font-bold text-amber-500">+{mission.xpReward} XP</div>
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-slate-500">
-                        {mission.target_type === 'reading' ? 'Bacaan' : mission.target_type}
+                        {mission.targetType === 'reading' ? 'Bacaan' : mission.targetType}
                       </span>
                       <span className={completed ? 'text-green-600 font-medium' : 'text-slate-600'}>
                         {progress}/{target}
