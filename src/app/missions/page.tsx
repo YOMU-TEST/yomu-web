@@ -103,23 +103,23 @@ export default function MissionsPage() {
                     <p className="text-sm text-slate-500 mt-1">{mission.description}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-amber-500">+{mission.xpReward} XP</div>
+                    <div className="text-lg font-bold text-amber-500">+{mission.xp_reward} XP</div>
                   </div>
                 </div>
 
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-slate-500">
-                      {mission.targetType === 'reading' ? 'Bacaan' : mission.targetType}
+                      {mission.target_type === 'reading' ? 'Bacaan' : mission.target_type}
                     </span>
                     <span className={mission.status !== 'in_progress' ? 'text-green-600 font-medium' : 'text-slate-600'}>
-                      {mission.progress ?? 0}/{mission.targetCount}
+                      {mission.progress ?? 0}/{mission.target_count}
                     </span>
                   </div>
                   <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all ${mission.status !== 'in_progress' ? 'bg-green-500' : 'bg-primary-500'}`}
-                      style={{ width: `${Math.min(((mission.progress ?? 0) / mission.targetCount) * 100, 100)}%` }}
+                      style={{ width: `${Math.min(((mission.progress ?? 0) / mission.target_count) * 100, 100)}%` }}
                     />
                   </div>
                   {mission.status === 'ready_to_claim' && (

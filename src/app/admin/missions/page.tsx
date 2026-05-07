@@ -60,11 +60,11 @@ export default function AdminMissionsPage() {
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <Input label="Judul Misi" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Membaca Berita" required />
-              <Select label="Target Type" value={form.targetType} onChange={e => setForm({ ...form, targetType: e.target.value })} options={[
+              <Select label="Target Type" value={form.target_type} onChange={e => setForm({ ...form, targetType: e.target.value })} options={[
                 { value: 'reading', label: 'Reading' },
                 { value: 'quiz', label: 'Quiz' },
               ]} />
-              <Input label="Target Count" type="number" value={form.targetCount} onChange={e => setForm({ ...form, targetCount: parseInt(e.target.value) })} min={1} />
+              <Input label="Target Count" type="number" value={form.target_count} onChange={e => setForm({ ...form, targetCount: parseInt(e.target.value) })} min={1} />
             </div>
             <Input label="Deskripsi" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
             <Button type="submit">Simpan</Button>
@@ -80,15 +80,15 @@ export default function AdminMissionsPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{m.title}</h3>
-                    <Badge variant="status" status={m.isActive ? 'active' : 'inactive'}>
-                      {m.isActive ? 'Aktif' : 'Nonaktif'}
+                    <Badge variant="status" status={m.is_active ? 'active' : 'inactive'}>
+                      {m.is_active ? 'Aktif' : 'Nonaktif'}
                     </Badge>
                   </div>
                   <p className="text-sm text-slate-500 mt-1">{m.description}</p>
-                  <p className="text-xs text-slate-400 mt-1">Target: {m.targetType} × {m.targetCount} | XP: {m.xpReward}</p>
+                  <p className="text-xs text-slate-400 mt-1">Target: {m.target_type} × {m.target_count} | XP: {m.xp_reward}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => toggleMission(m.id, m.isActive!)}>{m.isActive ? 'Nonaktifkan' : 'Aktifkan'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => toggleMission(m.id, m.is_active!)}>{m.is_active ? 'Nonaktifkan' : 'Aktifkan'}</Button>
                   <Button variant="danger" size="sm" onClick={() => deleteMission(m.id)}>Hapus</Button>
                 </div>
               </div>

@@ -67,13 +67,13 @@ export interface Mission {
   id: string;
   title: string;
   description: string;
-  targetType: string;
-  targetCount: number;
-  xpReward: number;
+  target_type: string;
+  target_count: number;
+  xp_reward: number;
   progress: number | null;
   claimed: boolean | null;
   date: string | null;
-  isActive?: boolean;
+  is_active?: boolean;
 }
 
 export interface Achievement {
