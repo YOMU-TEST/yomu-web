@@ -1,4 +1,4 @@
-import { GAMIFICATION_URL } from '@/lib/constants';
+import { API_URL } from '@/lib/constants';
 import { createApiClient } from './apiClient';
 
 export interface AchievementResponse {
@@ -15,6 +15,6 @@ export interface AchievementResponse {
 export const achievementService = {
   async getForUser(userId: string, token: string): Promise<AchievementResponse[]> {
     const client = createApiClient(token);
-    return client.get<AchievementResponse[]>(`/api/achievements/${userId}`, GAMIFICATION_URL);
+    return client.get<AchievementResponse[]>(`/api/achievements/${userId}`, API_URL);
   },
 };

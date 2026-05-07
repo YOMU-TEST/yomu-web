@@ -1,4 +1,4 @@
-import { GAMIFICATION_URL } from '@/lib/constants';
+import { API_URL } from '@/lib/constants';
 import { createApiClient } from './apiClient';
 
 export interface NotificationResponse {
@@ -14,17 +14,17 @@ export interface NotificationResponse {
 export const notificationService = {
   async getAll(userId: string, token: string): Promise<NotificationResponse[]> {
     const client = createApiClient(token);
-    return client.get<NotificationResponse[]>(`/api/notifications/${userId}`, GAMIFICATION_URL);
+    return client.get<NotificationResponse[]>(`/api/notifications/${userId}`, API_URL);
   },
 
   async getUnreadCount(userId: string, token: string): Promise<number> {
     const client = createApiClient(token);
-    const response = await client.get<{ count: number }>(`/api/notifications/${userId}/unread-count`, GAMIFICATION_URL);
+    const response = await client.get<{ count: number }>(`/api/notifications/${userId}/unread-count`, API_URL);
     return response.count;
   },
 
   async markAsRead(notificationId: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.put<void>(`/api/notifications/read/${notificationId}`, undefined, GAMIFICATION_URL);
+    return client.put<void>(`/api/notifications/read/${notificationId}`, undefined, API_URL);
   },
 };

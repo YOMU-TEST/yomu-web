@@ -1,4 +1,4 @@
-import { API_URL, GAMIFICATION_URL } from '@/lib/constants';
+import { API_URL } from '@/lib/constants';
 import { createApiClient } from './apiClient';
 import type { Mission, Season } from '@/types/domain';
 
@@ -13,7 +13,7 @@ export interface CreateMissionData {
 export const missionService = {
   async getForUser(userId: string, token: string): Promise<Mission[]> {
     const client = createApiClient(token);
-    return client.get<Mission[]>(`/api/missions/${userId}`, GAMIFICATION_URL);
+    return client.get<Mission[]>(`/api/missions/${userId}`, API_URL);
   },
 
   async claim(missionId: string, token: string): Promise<void> {
