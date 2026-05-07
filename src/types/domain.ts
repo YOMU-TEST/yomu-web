@@ -9,10 +9,10 @@ export interface Clan {
   id: string;
   name: string;
   tier: string;
-  totalScore: number;
-  leaderId: string;
-  leaderName: string;
-  memberCount: number;
+  total_score: number;
+  leader_id: string;
+  leader_name: string;
+  member_count: number;
 }
 
 export interface ClanMember {
@@ -106,9 +106,9 @@ export interface Notification {
 }
 
 export interface LeaderboardEntry {
-  clanId: string;
-  clanName: string;
+  clan_id: string;
+  clan_name: string;
   tier: string;
-  totalScore: number;
-  memberCount: number;
+  total_score: number;
+  member_count: number;
 }

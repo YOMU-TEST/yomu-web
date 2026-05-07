@@ -48,9 +48,9 @@ export default function AdminClansPage() {
                 <tr key={clan.id}>
                   <td className="px-6 py-4 font-medium">{clan.name}</td>
                   <td className="px-6 py-4"><Badge variant="tier" tier={clan.tier} /></td>
-                  <td className="px-6 py-4 text-sm">{clan.leaderName}</td>
-                  <td className="px-6 py-4 text-right">{clan.totalScore.toFixed(0)}</td>
-                  <td className="px-6 py-4 text-right">{clan.memberCount}</td>
+                  <td className="px-6 py-4 text-sm">{clan.leader_name}</td>
+                  <td className="px-6 py-4 text-right">{clan.total_score.toFixed(0)}</td>
+                  <td className="px-6 py-4 text-right">{clan.member_count}</td>
                   <td className="px-6 py-4 text-right">
                     <Button variant="danger" size="sm" onClick={() => deleteClan(clan.id)}>Hapus</Button>
                   </td>

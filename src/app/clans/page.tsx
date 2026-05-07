@@ -112,12 +112,12 @@ export default function ClansPage() {
                       <Badge variant="tier" tier={clan.tier} />
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
-                      Leader: {clan.leaderName} • {clan.memberCount} anggota
+                      Leader: {clan.leader_name} • {clan.member_count} anggota
                     </p>
-                    <p className="text-sm text-slate-500">Skor: {clan.totalScore.toFixed(0)}</p>
+                    <p className="text-sm text-slate-500">Skor: {clan.total_score.toFixed(0)}</p>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {clan.leaderId === user.id ? (
+                    {clan.leader_id === user.id ? (
                       <Button variant="danger" size="sm" onClick={() => handleDelete(clan.id)} disabled={!!actionLoading}>
                         Hapus
                       </Button>

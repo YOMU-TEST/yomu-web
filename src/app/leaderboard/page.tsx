@@ -53,7 +53,7 @@ export default function LeaderboardPage() {
           <Card padding="none" className="overflow-hidden">
             {leaderboard.map((clan, idx) => (
               <div
-                key={clan.clanId}
+                key={clan.clan_id}
                 className="flex items-center justify-between p-4 border-b last:border-b-0"
               >
                 <div className="flex items-center gap-4">
@@ -61,12 +61,12 @@ export default function LeaderboardPage() {
                     {idx + 1}
                   </span>
                   <div>
-                    <p className="font-semibold">{clan.clanName}</p>
-                    <p className="text-sm text-slate-500">{clan.memberCount} anggota</p>
+                    <p className="font-semibold">{clan.clan_name}</p>
+                    <p className="text-sm text-slate-500">{clan.member_count} anggota</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{clan.totalScore.toFixed(0)}</p>
+                  <p className="font-bold text-lg">{clan.total_score.toFixed(0)}</p>
                   <Badge variant="tier" tier={clan.tier} />
                 </div>
               </div>
