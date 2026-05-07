@@ -18,41 +18,41 @@ export interface QuizResult {
 export const readingService = {
   async getAll(token: string): Promise<Reading[]> {
     const client = createApiClient(token);
-    return client.get<Reading[]>(`${API_URL}/api/readings`);
+    return client.get<Reading[]>('/api/readings', API_URL);
   },
 
   async getById(id: string, token: string): Promise<Reading> {
     const client = createApiClient(token);
-    return client.get<Reading>(`${API_URL}/api/readings/${id}`);
+    return client.get<Reading>(`/api/readings/${id}`, API_URL);
   },
 
   async getQuestions(readingId: string, token: string): Promise<Question[]> {
     const client = createApiClient(token);
-    return client.get<Question[]>(`${API_URL}/api/readings/${readingId}/questions`);
+    return client.get<Question[]>(`/api/readings/${readingId}/questions`, API_URL);
   },
 
   async submitQuiz(submission: QuizSubmission, token: string): Promise<QuizResult> {
     const client = createApiClient(token);
-    return client.post<QuizResult>(`${API_URL}/api/readings/${submission.readingId}/submit`, submission);
+    return client.post<QuizResult>(`/api/readings/${submission.readingId}/submit`, submission, API_URL);
   },
 
   async checkCompletionStatus(readingId: string, token: string): Promise<boolean> {
     const client = createApiClient(token);
-    return client.get<boolean>(`${API_URL}/api/readings/${readingId}/status`);
+    return client.get<boolean>(`/api/readings/${readingId}/status`, API_URL);
   },
 
   async markComplete(readingId: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.post<void>(`${API_URL}/api/readings/${readingId}/complete`);
+    return client.post<void>(`/api/readings/${readingId}/complete`, undefined, API_URL);
   },
 
   async create(token: string, data: { title: string; content: string; categoryName: string }): Promise<Reading> {
     const client = createApiClient(token);
-    return client.post<Reading>(`${API_URL}/api/readings`, data);
+    return client.post<Reading>('/api/readings', data, API_URL);
   },
 
   async delete(id: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.delete<void>(`${API_URL}/api/readings/${id}`);
+    return client.delete<void>(`/api/readings/${id}`, API_URL);
   },
 };

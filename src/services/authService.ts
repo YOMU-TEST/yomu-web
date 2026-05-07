@@ -23,44 +23,26 @@ export interface AuthResponse {
 }
 
 export interface UserProfileResponse {
-  user: {
-    id: string;
-    username: string;
-    displayName: string;
-    role: string;
-  };
-  stats: {
-    readingsCompleted: number;
-    quizzesTaken: number;
-    averageAccuracy: number;
-  };
-  achievements: Array<{
-    id: string;
-    name: string;
-    unlockedAt: string;
-  }>;
-  clan: {
-    id: string;
-    name: string;
-    tier: string;
-    role: string;
-  } | null;
+  user: { id: string; username: string; displayName: string; role: string };
+  stats: { readingsCompleted: number; quizzesTaken: number; averageAccuracy: number };
+  achievements: Array<{ id: string; name: string; unlockedAt: string }>;
+  clan: { id: string; name: string; tier: string; role: string } | null;
 }
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const client = createApiClient(null);
-    return client.post<AuthResponse>(`${API_URL}/api/auth/login`, credentials);
+    return client.post<AuthResponse>('/api/auth/login', credentials, API_URL);
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
     const client = createApiClient(null);
-    return client.post<AuthResponse>(`${API_URL}/api/auth/register`, data);
+    return client.post<AuthResponse>('/api/auth/register', data, API_URL);
   },
 
   async getProfile(userId: string, token: string): Promise<UserProfileResponse> {
     const client = createApiClient(token);
-    return client.get<UserProfileResponse>(`${API_URL}/api/users/${userId}/profile`);
+    return client.get<UserProfileResponse>(`/api/users/${userId}/profile`, API_URL);
   },
 
   async updateProfile(
@@ -69,6 +51,6 @@ export const authService = {
     data: { displayName?: string; password?: string; updatePassword?: boolean }
   ): Promise<User> {
     const client = createApiClient(token);
-    return client.put<User>(`${API_URL}/api/users/${userId}`, data);
+    return client.put<User>(`/api/users/${userId}`, data, API_URL);
   },
 };

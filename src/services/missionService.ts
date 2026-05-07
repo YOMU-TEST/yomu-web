@@ -13,38 +13,38 @@ export interface CreateMissionData {
 export const missionService = {
   async getForUser(userId: string, token: string): Promise<Mission[]> {
     const client = createApiClient(token);
-    return client.get<Mission[]>(`${GAMIFICATION_URL}/api/missions/${userId}`);
+    return client.get<Mission[]>(`/api/missions/${userId}`, GAMIFICATION_URL);
   },
 
   async claim(missionId: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.post<void>(`${API_URL}/api/missions/${missionId}/claim`);
+    return client.post<void>(`/api/missions/${missionId}/claim`, undefined, API_URL);
   },
 
   async getAdminMissions(token: string): Promise<Mission[]> {
     const client = createApiClient(token);
-    return client.get<Mission[]>(`${API_URL}/api/admin/missions`);
+    return client.get<Mission[]>('/api/admin/missions', API_URL);
   },
 
   async create(data: CreateMissionData, token: string): Promise<Mission> {
     const client = createApiClient(token);
-    return client.post<Mission>(`${API_URL}/api/admin/missions`, data);
+    return client.post<Mission>('/api/admin/missions', data, API_URL);
   },
 
   async toggle(id: string, active: boolean, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.patch<void>(`${API_URL}/api/admin/missions/${id}/toggle?active=${!active}`);
+    return client.patch<void>(`/api/admin/missions/${id}/toggle?active=${!active}`, undefined, API_URL);
   },
 
   async delete(id: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.delete<void>(`${API_URL}/api/admin/missions/${id}`);
+    return client.delete<void>(`/api/admin/missions/${id}`, API_URL);
   },
 
   async getActiveSeason(token: string): Promise<Season | null> {
     const client = createApiClient(token);
     try {
-      return await client.get<Season>(`${API_URL}/api/admin/seasons/active`);
+      return await client.get<Season>('/api/admin/seasons/active', API_URL);
     } catch {
       return null;
     }
@@ -52,6 +52,6 @@ export const missionService = {
 
   async endSeason(seasonId: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    return client.post<void>(`${API_URL}/api/admin/seasons/${seasonId}/end`);
+    return client.post<void>(`/api/admin/seasons/${seasonId}/end`, undefined, API_URL);
   },
 };
