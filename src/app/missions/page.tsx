@@ -33,7 +33,7 @@ export default function MissionsPage() {
       .then(data => {
         setMissions(data.map(m => {
           const progress = m.progress ?? 0;
-          const completed = progress >= m.targetCount;
+          const completed = progress >= m.target_count;
           const claimed = m.claimed ?? false;
           return {
             ...m,
