@@ -60,11 +60,11 @@ export default function AdminMissionsPage() {
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <Input label="Judul Misi" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Membaca Berita" required />
-              <Select label="Target Type" value={form.target_type} onChange={e => setForm({ ...form, targetType: e.target.value })} options={[
+              <Select label="Target Type" value={form.targetType} onChange={e => setForm({ ...form, targetType: e.target.value })} options={[
                 { value: 'reading', label: 'Reading' },
                 { value: 'quiz', label: 'Quiz' },
               ]} />
-              <Input label="Target Count" type="number" value={form.target_count} onChange={e => setForm({ ...form, targetCount: parseInt(e.target.value) })} min={1} />
+              <Input label="Target Count" type="number" value={form.targetCount} onChange={e => setForm({ ...form, targetCount: parseInt(e.target.value) })} min={1} />
             </div>
             <Input label="Deskripsi" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
             <Button type="submit">Simpan</Button>
