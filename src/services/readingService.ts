@@ -15,6 +15,14 @@ export interface QuizResult {
   correctAnswers: number;
 }
 
+export interface QuestionRequest {
+  readingId: string;
+  questionText: string;
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
+}
+
 export const readingService = {
   async getAll(token: string): Promise<Reading[]> {
     const client = createApiClient(token);
@@ -54,5 +62,26 @@ export const readingService = {
   async delete(id: string, token: string): Promise<void> {
     const client = createApiClient(token);
     return client.delete<void>(`/api/readings/${id}`, API_URL);
+  },
+
+  // Admin question methods
+  async getAdminQuestions(readingId: string, token: string): Promise<Question[]> {
+    const client = createApiClient(token);
+    return client.get<Question[]>(`/api/admin/questions/reading/${readingId}`, API_URL);
+  },
+
+  async createQuestion(token: string, data: QuestionRequest): Promise<Question> {
+    const client = createApiClient(token);
+    return client.post<Question>('/api/admin/questions', data, API_URL);
+  },
+
+  async updateQuestion(token: string, id: string, data: Omit<QuestionRequest, 'readingId'>): Promise<Question> {
+    const client = createApiClient(token);
+    return client.put<Question>(`/api/admin/questions/${id}`, data, API_URL);
+  },
+
+  async deleteQuestion(token: string, id: string): Promise<void> {
+    const client = createApiClient(token);
+    return client.delete<void>(`/api/admin/questions/${id}`, API_URL);
   },
 };

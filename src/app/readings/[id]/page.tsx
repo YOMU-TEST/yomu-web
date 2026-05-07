@@ -61,8 +61,13 @@ export default function ReadingDetailPage() {
     try {
       await readingService.markComplete(readingId, token!);
       toast.success(SUCCESS_MESSAGES.READING_COMPLETED);
-    } catch {
-      toast.info(SUCCESS_MESSAGES.READING_ALREADY_COMPLETED);
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
+      if (status === 409) {
+        toast.info(SUCCESS_MESSAGES.READING_ALREADY_COMPLETED);
+      } else {
+        toast.error(ERROR_MESSAGES.CONNECTION_ERROR);
+      }
     } finally {
       setIsCompleting(false);
     }

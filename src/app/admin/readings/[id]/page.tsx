@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -20,36 +21,89 @@ const emptyForm: QuestionForm = { questionText: '', options: ['', '', '', ''], c
 
 export default function AdminReadingDetailPage() {
   const { user, token } = useAuth();
+  const params = useParams();
+  const readingId = params.id as string;
+
   const [reading, setReading] = useState<Reading | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<QuestionForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') return;
-    // Assumes readingId is available via params - simplified for brevity
-    setLoading(false);
-  }, [user, token]);
+    if (!user || user.role !== 'admin' || !token) return;
 
-  const handleSubmit = async (e: React.FormEvent, readingId: string) => {
+    Promise.all([
+      readingService.getById(readingId, token),
+      readingService.getAdminQuestions(readingId, token),
+    ])
+      .then(([readingData, questionsData]) => {
+        setReading(readingData);
+        setQuestions(questionsData);
+      })
+      .catch(err => console.error('Failed to fetch:', err))
+      .finally(() => setLoading(false));
+  }, [user, token, readingId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // CRUD logic would go here using readingService
-    setShowForm(false);
-    setEditingId(null);
-    setForm(emptyForm);
+    if (!token) return;
+
+    setSaving(true);
+    try {
+      if (editingId) {
+        const updated = await readingService.updateQuestion(token, editingId, {
+          questionText: form.questionText,
+          options: form.options,
+          correctAnswer: form.correctAnswer,
+          explanation: form.explanation || undefined,
+        });
+        setQuestions(questions.map(q => q.id === editingId ? updated : q));
+      } else {
+        const created = await readingService.createQuestion(token, {
+          readingId,
+          questionText: form.questionText,
+          options: form.options,
+          correctAnswer: form.correctAnswer,
+          explanation: form.explanation || undefined,
+        });
+        setQuestions([...questions, created]);
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setForm(emptyForm);
+    } catch (err) {
+      console.error('Failed to save:', err);
+      alert('Gagal menyimpan soal');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (q: Question) => {
     setEditingId(q.id);
-    setForm({ questionText: q.questionText, options: q.options, correctAnswer: q.correctAnswer, explanation: q.explanation || '' });
+    setForm({
+      questionText: q.questionText,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation || '',
+    });
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus soal ini?')) return;
-    // Delete logic here
+    if (!token) return;
+
+    try {
+      await readingService.deleteQuestion(token, id);
+      setQuestions(questions.filter(q => q.id !== id));
+    } catch (err) {
+      console.error('Failed to delete:', err);
+      alert('Gagal menghapus soal');
+    }
   };
 
   if (!user || user.role !== 'admin') return null;
@@ -59,7 +113,7 @@ export default function AdminReadingDetailPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <Link href="/admin/readings" className="text-sm text-slate-500 hover:text-slate-700 mb-1 block">← Kembali</Link>
-          <h2 className="text-2xl font-bold">{reading?.title || 'Detail Bacaan'}</h2>
+          <h2 className="text-2xl font-bold">{loading ? 'Memuat...' : (reading?.title || 'Detail Bacaan')}</h2>
         </div>
         <Button onClick={() => { setShowForm(!showForm); if (!showForm) { setEditingId(null); setForm(emptyForm); } }}>
           {showForm ? 'Batal' : '+ Tambah Soal'}
@@ -68,21 +122,45 @@ export default function AdminReadingDetailPage() {
 
       {showForm && (
         <Card className="mb-8">
-          <form onSubmit={(e) => handleSubmit(e, reading?.id || '')} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <h3 className="font-semibold">{editingId ? 'Edit Soal' : 'Tambah Soal Baru'}</h3>
-            <Textarea label="Pertanyaan" value={form.questionText} onChange={e => setForm({ ...form, questionText: e.target.value })} rows={2} required />
+            <Textarea
+              label="Pertanyaan"
+              value={form.questionText}
+              onChange={e => setForm({ ...form, questionText: e.target.value })}
+              rows={2}
+              required
+            />
             <div className="space-y-2">
               <label className="block text-sm font-medium">Opsi Jawaban</label>
               {form.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input type="radio" name="correct" checked={form.correctAnswer === i} onChange={() => setForm({ ...form, correctAnswer: i })} />
-                  <Input value={opt} onChange={e => { const newOpts = [...form.options]; newOpts[i] = e.target.value; setForm({ ...form, options: newOpts }); }} placeholder={`Opsi ${String.fromCharCode(65 + i)}`} required />
+                  <input
+                    type="radio"
+                    name="correct"
+                    checked={form.correctAnswer === i}
+                    onChange={() => setForm({ ...form, correctAnswer: i })}
+                  />
+                  <Input
+                    value={opt}
+                    onChange={e => {
+                      const newOpts = [...form.options];
+                      newOpts[i] = e.target.value;
+                      setForm({ ...form, options: newOpts });
+                    }}
+                    placeholder={`Opsi ${String.fromCharCode(65 + i)}`}
+                    required
+                  />
                 </div>
               ))}
             </div>
-            <Input label="Penjelasan (opsional)" value={form.explanation} onChange={e => setForm({ ...form, explanation: e.target.value })} />
+            <Input
+              label="Penjelasan (opsional)"
+              value={form.explanation}
+              onChange={e => setForm({ ...form, explanation: e.target.value })}
+            />
             <div className="flex gap-2">
-              <Button type="submit">{editingId ? 'Update' : 'Simpan'}</Button>
+              <Button type="submit" isLoading={saving}>{editingId ? 'Update' : 'Simpan'}</Button>
               <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); }}>Batal</Button>
             </div>
           </form>
@@ -90,7 +168,9 @@ export default function AdminReadingDetailPage() {
       )}
 
       <h3 className="font-semibold mb-4">Daftar Soal ({questions.length})</h3>
-      {loading ? <p className="text-slate-500">Memuat...</p> : questions.length === 0 ? (
+      {loading ? (
+        <p className="text-slate-500">Memuat...</p>
+      ) : questions.length === 0 ? (
         <p className="text-slate-500">Belum ada soal.</p>
       ) : (
         <div className="space-y-4">
