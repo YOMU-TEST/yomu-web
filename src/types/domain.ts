@@ -13,7 +13,6 @@ export interface Clan {
   leaderId: string;
   leaderName: string;
   memberCount: number;
-  myRole?: string;
 }
 
 export interface ClanMember {
@@ -112,6 +111,4 @@ export interface LeaderboardEntry {
   tier: string;
   totalScore: number;
   memberCount: number;
-  multiplier: number;
-  effectiveScore: number;
 }

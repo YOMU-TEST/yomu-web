@@ -66,7 +66,7 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{clan.effectiveScore.toFixed(0)}</p>
+                  <p className="font-bold text-lg">{clan.totalScore.toFixed(0)}</p>
                   <Badge variant="tier" tier={clan.tier} />
                 </div>
               </div>
