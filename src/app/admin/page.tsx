@@ -3,133 +3,116 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/components/Toast';
+import Link from 'next/link';
+import Header from '@/components/Header';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { missionService } from '@/services/missionService';
+import { readingService } from '@/services/readingService';
+import { clanService } from '@/services/clanService';
+import { useToast } from '@/hooks/useToast';
+import { HOME_REDIRECT, SUCCESS_MESSAGES } from '@/lib/constants';
+import type { Season } from '@/types/domain';
 
-interface Season {
-  id: string;
-  name: string;
-  isActive: boolean;
+interface DashboardStats {
+  readings: number;
+  missions: number;
+  clans: number;
 }
 
 export default function AdminDashboard() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
-  const { showToast } = useToast();
-  const [stats, setStats] = useState<any>({});
+  const toast = useToast();
+  const [stats, setStats] = useState<DashboardStats>({ readings: 0, missions: 0, clans: 0 });
   const [loading, setLoading] = useState(true);
   const [activeSeason, setActiveSeason] = useState<Season | null>(null);
-  const [endingSeason, setEndingSeason] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') return;
+    if (isLoading) return;
+    if (!user || user.role !== 'admin') { router.push(HOME_REDIRECT); return; }
 
-    const fetchStats = async () => {
-      try {
-        const [readingsRes, missionsRes, clansRes, seasonRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/readings`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/missions`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clans`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/seasons/active`, { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
-
-        setStats({
-          readings: readingsRes.ok ? (await readingsRes.json()).length : 0,
-          missions: missionsRes.ok ? (await missionsRes.json()).length : 0,
-          clans: clansRes.ok ? (await clansRes.json()).length : 0,
-        });
-
-        if (seasonRes.ok) {
-          setActiveSeason(await seasonRes.json());
-        }
-      } catch (err) {
-        console.error('Failed to fetch stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [user, token]);
+    Promise.all([
+      readingService.getAll(token!).then(r => r.length),
+      missionService.getAdminMissions(token!).then(m => m.length),
+      clanService.getAll(token!).then(c => c.length),
+      missionService.getActiveSeason(token!),
+    ]).then(([readings, missions, clans, season]) => {
+      setStats({ readings, missions, clans });
+      setActiveSeason(season);
+    }).catch(err => console.error('Failed to fetch stats:', err))
+      .finally(() => setLoading(false));
+  }, [user, isLoading, token, router]);
 
   const handleEndSeason = async () => {
-    if (!activeSeason || endingSeason) return;
+    if (!activeSeason || isEnding) return;
     if (!confirm(`Akhiri season "${activeSeason.name}"? Clan akan dipromosi/demoti sesuai ranking.`)) return;
 
-    setEndingSeason(true);
+    setIsEnding(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/seasons/${activeSeason.id}/end`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.ok) {
-        showToast('Season berhasil diakhiri!', 'success');
-        setActiveSeason(null);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        showToast(data.error || 'Gagal mengakhiri season', 'error');
-      }
-    } catch {
-      showToast('Error koneksi', 'error');
+      await missionService.endSeason(activeSeason.id, token!);
+      toast.success(SUCCESS_MESSAGES.SEASON_ENDED);
+      setActiveSeason(null);
+    } catch (err) {
+      toast.error('Gagal mengakhiri season');
     } finally {
-      setEndingSeason(false);
+      setIsEnding(false);
     }
   };
 
-  if (!user || user.role !== 'admin') return null;
+  if (isLoading || !user || user.role !== 'admin') return null;
 
   const cards = [
-    { label: 'Bacaan', value: stats.readings || 0, href: '/admin/readings', color: 'bg-blue-500' },
-    { label: 'Misi Harian', value: stats.missions || 0, href: '/admin/missions', color: 'bg-green-500' },
-    { label: 'Clan', value: stats.clans || 0, href: '/admin/clans', color: 'bg-purple-500' },
+    { label: 'Bacaan', value: stats.readings, href: '/admin/readings', color: 'bg-blue-500' },
+    { label: 'Misi Harian', value: stats.missions, href: '/admin/missions', color: 'bg-green-500' },
+    { label: 'Clan', value: stats.clans, href: '/admin/clans', color: 'bg-purple-500' },
   ];
 
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Dashboard Admin</h2>
+
       {loading ? (
         <p className="text-slate-500">Memuat...</p>
       ) : (
         <div className="grid md:grid-cols-3 gap-6">
-          {cards.map((card) => (
-            <a
-              key={card.label}
-              href={card.href}
-              className="block p-6 bg-white rounded-xl border hover:border-slate-300 transition-colors"
-            >
-              <div className={`inline-block px-3 py-1 rounded text-white text-sm mb-2 ${card.color}`}>
-                {card.label}
-              </div>
-              <p className="text-3xl font-bold">{card.value}</p>
-            </a>
+          {cards.map(card => (
+            <Link key={card.label} href={card.href}>
+              <Card className="hover:border-slate-300 transition-colors">
+                <div className={`inline-block px-3 py-1 rounded text-white text-sm mb-2 ${card.color}`}>
+                  {card.label}
+                </div>
+                <p className="text-3xl font-bold">{card.value}</p>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
 
       {activeSeason && (
-        <div className="mt-8 p-6 bg-amber-50 rounded-xl border border-amber-200">
+        <Card className="mt-8 bg-amber-50 border-amber-200">
           <h3 className="font-semibold mb-2">Season Aktif</h3>
           <p className="text-lg">{activeSeason.name}</p>
-          <button
+          <Button
+            variant="danger"
+            size="sm"
+            className="mt-3"
             onClick={handleEndSeason}
-            disabled={endingSeason}
-            className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
+            isLoading={isEnding}
           >
-            {endingSeason ? 'Mengakhiri...' : 'Akhiri Season'}
-          </button>
-        </div>
+            {isEnding ? 'Mengakhiri...' : 'Akhiri Season'}
+          </Button>
+        </Card>
       )}
 
-      <div className="mt-8 p-6 bg-white rounded-xl border">
+      <Card className="mt-8">
         <h3 className="font-semibold mb-4">Quick Actions</h3>
         <div className="flex gap-4 flex-wrap">
-          <a href="/admin/readings" className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-            + Tambah Bacaan
-          </a>
-          <a href="/admin/missions" className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
-            + Tambah Misi Harian
-          </a>
+          <Link href="/admin/readings"><Button>+ Tambah Bacaan</Button></Link>
+          <Link href="/admin/missions"><Button>+ Tambah Misi Harian</Button></Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

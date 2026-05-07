@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { readingService } from '@/services/readingService';
+import { AUTH_REDIRECT } from '@/lib/constants';
+import type { Reading } from '@/types/domain';
 
-interface Reading {
-  id: string;
-  title: string;
-  category: { name: string } | null;
-  createdAt: string;
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('id-ID');
 }
 
 export default function ReadingsPage() {
@@ -22,31 +25,21 @@ export default function ReadingsPage() {
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
-      router.push('/login');
+      router.push(AUTH_REDIRECT);
       return;
     }
 
-    const fetchReadings = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/readings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setReadings(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch readings:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReadings();
+    readingService.getAll(token!).then(data => {
+      setReadings(data);
+    }).catch(err => {
+      console.error('Failed to fetch readings:', err);
+    }).finally(() => {
+      setLoading(false);
+    });
   }, [user, token, isLoading, router]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
+    return <LoadingState />;
   }
 
   if (!user) return null;
@@ -63,24 +56,22 @@ export default function ReadingsPage() {
         {loading ? (
           <p className="text-slate-500">Memuat...</p>
         ) : readings.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border">
+          <Card className="text-center py-12">
             <p className="text-slate-500">Belum ada bacaan.</p>
-          </div>
+          </Card>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {readings.map((reading) => (
-              <Link
-                key={reading.id}
-                href={`/readings/${reading.id}`}
-                className="block p-6 bg-white rounded-xl border hover:border-primary-500 transition-colors"
-              >
-                <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-1 rounded">
-                  {reading.category?.name || 'Umum'}
-                </span>
-                <h3 className="text-lg font-semibold mt-2">{reading.title}</h3>
-                <p className="text-sm text-slate-500 mt-1">
-                  {new Date(reading.createdAt).toLocaleDateString('id-ID')}
-                </p>
+              <Link key={reading.id} href={`/readings/${reading.id}`}>
+                <Card className="hover:border-primary-500 transition-colors cursor-pointer">
+                  <Badge variant="default" className="mb-2">
+                    {reading.category?.name || 'Umum'}
+                  </Badge>
+                  <h3 className="text-lg font-semibold">{reading.title}</h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {formatDate(reading.createdAt)}
+                  </p>
+                </Card>
               </Link>
             ))}
           </div>

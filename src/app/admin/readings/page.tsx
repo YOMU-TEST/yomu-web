@@ -2,65 +2,49 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-interface Reading {
-  id: string;
-  title: string;
-  content: string;
-  category: { id: number; name: string } | null;
-  createdAt: string;
-}
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input, Textarea } from '@/components/ui/FormField';
+import { readingService } from '@/services/readingService';
+import { useToast } from '@/hooks/useToast';
+import type { Reading } from '@/types/domain';
 
 export default function AdminReadingsPage() {
   const { user, token } = useAuth();
-  const router = useRouter();
+  const toast = useToast();
   const [readings, setReadings] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', category: 'News & Media' });
-  const [categoryInput, setCategoryInput] = useState('');
 
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
     fetchReadings();
   }, [user, token]);
 
-  const fetchReadings = async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/readings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) setReadings(await res.json());
-    } catch (err) {
-      console.error('Failed:', err);
-    } finally {
-      setLoading(false);
-    }
+  const fetchReadings = () => {
+    readingService.getAll(token!).then(setReadings).catch(err => console.error('Failed:', err))
+      .finally(() => setLoading(false));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/readings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ ...form, categoryName: form.category }),
-      });
-      if (res.ok) {
-        setShowForm(false);
-        setForm({ title: '', content: '', category: 'News & Media' });
-        fetchReadings();
-      } else {
-        alert('Gagal membuat bacaan');
-      }
+      await readingService.create(token!, { ...form, categoryName: form.category });
+      setShowForm(false);
+      setForm({ title: '', content: '', category: 'News & Media' });
+      fetchReadings();
     } catch {
-      alert('Error');
+      toast.error('Gagal membuat bacaan');
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Hapus bacaan ini?')) return;
+    await readingService.delete(id, token!);
+    fetchReadings();
   };
 
   if (!user || user.role !== 'admin') return null;
@@ -69,88 +53,37 @@ export default function AdminReadingsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Kelola Bacaan</h2>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-        >
-          {showForm ? 'Batal' : '+ Tambah Bacaan'}
-        </button>
+        <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Batal' : '+ Tambah Bacaan'}</Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="mb-8 p-6 bg-white rounded-xl border space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Judul</label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Kategori</label>
-            <input
-              type="text"
-              value={categoryInput}
-              onChange={(e) => {
-                setCategoryInput(e.target.value);
-                setForm({ ...form, category: e.target.value });
-              }}
-              placeholder="News & Media, Olahraga, dll"
-              className="w-full px-3 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Konten</label>
-            <textarea
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg h-48"
-              required
-            />
-          </div>
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-            Simpan
-          </button>
-        </form>
+        <Card className="mb-8">
+          <form onSubmit={handleCreate} className="space-y-4">
+            <Input label="Judul" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
+            <Input label="Kategori" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="News & Media, Olahraga, dll" />
+            <Textarea label="Konten" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={6} required />
+            <Button type="submit">Simpan</Button>
+          </form>
+        </Card>
       )}
 
-      {loading ? (
-        <p className="text-slate-500">Memuat...</p>
-      ) : readings.length === 0 ? (
+      {loading ? <p className="text-slate-500">Memuat...</p> : readings.length === 0 ? (
         <p className="text-slate-500">Belum ada bacaan.</p>
       ) : (
         <div className="space-y-4">
-          {readings.map((r) => (
-            <div key={r.id} className="p-4 bg-white rounded-xl border">
+          {readings.map(r => (
+            <Card key={r.id}>
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                    {r.category?.name || 'Tanpa kategori'}
-                  </span>
+                  <Badge variant="default">{r.category?.name || 'Tanpa kategori'}</Badge>
                   <h3 className="font-semibold mt-1">
                     <Link href={`/admin/readings/${r.id}`} className="hover:underline">{r.title}</Link>
                   </h3>
                   <p className="text-sm text-slate-500 mt-1 line-clamp-2">{r.content}</p>
                 </div>
-                <button
-                  onClick={async () => {
-                    if (confirm('Hapus bacaan ini?')) {
-                      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/readings/${r.id}`, {
-                        method: 'DELETE',
-                        headers: { Authorization: `Bearer ${token}` },
-                      });
-                      fetchReadings();
-                    }
-                  }}
-                  className="text-red-600 text-sm hover:underline"
-                >
-                  Hapus
-                </button>
+                <Button variant="danger" size="sm" onClick={() => handleDelete(r.id)}>Hapus</Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
