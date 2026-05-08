@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useToast } from '@/components/Toast';
+import Header from '@/components/Header';
 
 interface Question {
   id: string;
@@ -22,10 +23,11 @@ interface Reading {
 type Step = 'reading' | 'quiz' | 'result';
 
 export default function ReadingDetailPage() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { showToast } = useToast();
 
   const [reading, setReading] = useState<Reading | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -33,8 +35,10 @@ export default function ReadingDetailPage() {
   const [answers, setAnswers] = useState<number[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -61,15 +65,23 @@ export default function ReadingDetailPage() {
         }
       } catch (err) {
         console.error('Failed to fetch:', err);
+        showToast('Gagal memuat data', 'error');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user, token, id, router]);
+  }, [user, token, id, router, showToast]);
 
   const submitQuiz = async () => {
+    if (isSubmitting) return;
+    if (answers.some((a) => a === -1)) {
+      showToast('Jawab semua pertanyaan terlebih dahulu', 'warning');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/readings/${id}/submit`,
@@ -82,13 +94,26 @@ export default function ReadingDetailPage() {
           body: JSON.stringify({ readingId: id, answers }),
         }
       );
+
       if (res.ok) {
         const data = await res.json();
         setResult(data);
         setStep('result');
+        showToast('Kuis berhasil disubmit!', 'success');
+      } else if (res.status === 400) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || 'Kuis sudah pernah disubmit', 'error');
+      } else if (res.status === 401) {
+        showToast('Session expired, silakan login ulang', 'error');
+        router.push('/login');
+      } else {
+        showToast('Gagal submit kuis', 'error');
       }
     } catch (err) {
       console.error('Failed to submit:', err);
+      showToast('Error koneksi saat submit kuis', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,11 +122,7 @@ export default function ReadingDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4">
-          <h1 className="text-xl font-bold text-primary-600">Yomu</h1>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         {step === 'reading' && (
@@ -113,7 +134,33 @@ export default function ReadingDetailPage() {
             <div className="prose max-w-none">
               <p className="whitespace-pre-wrap">{reading.content}</p>
             </div>
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-end gap-4">
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      `${process.env.NEXT_PUBLIC_API_URL}/api/readings/${id}/complete`,
+                      {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` },
+                      }
+                    );
+                    if (res.ok) {
+                      showToast('Bacaan ditandai selesai!', 'success');
+                    } else if (res.status === 409) {
+                      showToast('Bacaan sudah pernah ditandai selesai', 'info');
+                    } else {
+                      showToast('Gagal menandai bacaan', 'error');
+                    }
+                  } catch (err) {
+                    console.error('Failed to mark reading complete:', err);
+                    showToast('Gagal menandai bacaan', 'error');
+                  }
+                }}
+                className="px-6 py-3 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300"
+              >
+                Selesai Baca
+              </button>
               <button
                 onClick={() => setStep('quiz')}
                 className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
@@ -168,10 +215,10 @@ export default function ReadingDetailPage() {
               </button>
               <button
                 onClick={submitQuiz}
-                disabled={answers.some((a) => a === -1)}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
+                disabled={isSubmitting || answers.some((a) => a === -1)}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Submit Kuis
+                {isSubmitting ? 'Mengirim...' : 'Submit Kuis'}
               </button>
             </div>
           </div>

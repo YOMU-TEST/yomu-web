@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -32,6 +33,17 @@ export default function Login() {
             {error}
           </div>
         )}
+        <div className="mb-4">
+          <GoogleLoginButton />
+        </div>
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-slate-500">atau</span>
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
