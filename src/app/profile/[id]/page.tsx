@@ -93,8 +93,6 @@ export default function OtherUserProfilePage({ params }: PageProps) {
     }
   }, [authLoading, mounted, user, router]);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
-
   if (!mounted || authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
   }
