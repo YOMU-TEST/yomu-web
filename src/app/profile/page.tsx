@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 
@@ -21,6 +22,7 @@ interface UserProfile {
     id: string;
     name: string;
     unlockedAt: string;
+    visible: boolean;
   }>;
   clan: {
     id: string;
@@ -35,6 +37,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingVisibility, setIsEditingVisibility] = useState(false);
+  const [togglingAchievementId, setTogglingAchievementId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,6 +46,7 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -140,6 +145,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleToggleAchievementVisibility = async (achievementId: string, currentVisible: boolean) => {
+    setTogglingAchievementId(achievementId);
+    try {
+      const res = await fetch(`${apiUrl}/api/achievements/${achievementId}/visibility?visible=${!currentVisible}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to toggle visibility');
+      }
+
+      // Update local state
+      setProfileData(prev => prev ? {
+        ...prev,
+        achievements: prev.achievements.map(ach =>
+          ach.id === achievementId ? { ...ach, visible: !currentVisible } : ach
+        ),
+      } : null);
+
+      showToast('Achievement visibility updated', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update visibility', 'error');
+    } finally {
+      setTogglingAchievementId(null);
+    }
+  };
+
   if (!mounted || authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
   }
@@ -194,13 +229,53 @@ export default function ProfilePage() {
 
             {/* Achievements Card */}
             <div className="bg-white rounded-xl border p-6">
-              <h3 className="text-lg font-semibold mb-4">Achievements ({profileData?.achievements?.length || 0})</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Achievements ({profileData?.achievements?.length || 0})</h3>
+                {!isEditingVisibility && (
+                  <button
+                    onClick={() => setIsEditingVisibility(true)}
+                    className="text-sm px-3 py-1 text-primary-600 hover:bg-primary-50 rounded-lg"
+                  >
+                    Edit Visibility
+                  </button>
+                )}
+                {isEditingVisibility && (
+                  <button
+                    onClick={() => setIsEditingVisibility(false)}
+                    className="text-sm px-3 py-1 text-slate-600 hover:bg-slate-100 rounded-lg"
+                  >
+                    Done
+                  </button>
+                )}
+              </div>
               {profileData?.achievements && profileData.achievements.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
                   {profileData.achievements.map((ach) => (
-                    <div key={ach.id} className="p-3 bg-amber-50 rounded-lg">
-                      <p className="font-medium text-amber-800">{ach.name}</p>
-                      <p className="text-xs text-amber-600">{new Date(ach.unlockedAt).toLocaleDateString('id-ID')}</p>
+                    <div key={ach.id} className="p-3 bg-amber-50 rounded-lg flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-amber-800">{ach.name}</p>
+                        <p className="text-xs text-amber-600">{new Date(ach.unlockedAt).toLocaleDateString('id-ID')}</p>
+                      </div>
+                      {isEditingVisibility && (
+                        <button
+                          onClick={() => handleToggleAchievementVisibility(ach.id, ach.visible)}
+                          disabled={togglingAchievementId === ach.id}
+                          className={`p-2 rounded-lg transition-colors ${
+                            ach.visible
+                              ? 'text-amber-600 hover:bg-amber-100'
+                              : 'text-slate-400 hover:bg-slate-100'
+                          } disabled:opacity-50`}
+                          title={ach.visible ? 'Hide achievement' : 'Show achievement'}
+                        >
+                          {togglingAchievementId === ach.id ? (
+                            <span className="text-xs">...</span>
+                          ) : ach.visible ? (
+                            <span>👁️</span>
+                          ) : (
+                            <span>👁️‍🗨️</span>
+                          )}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

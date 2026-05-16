@@ -189,7 +189,7 @@ export default function ClansPage() {
                       </span>
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
-                      Leader: {clan.leaderName} • {clan.memberCount} anggota
+                      Leader: <Link href={`/profile/${clan.leaderId}`} className="hover:underline">{clan.leaderName}</Link> • {clan.memberCount} anggota
                     </p>
                     <p className="text-sm text-slate-500">
                       Skor: {clan.totalScore.toFixed(0)}
