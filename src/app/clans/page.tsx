@@ -16,6 +16,10 @@ interface Clan {
   leaderName: string;
   memberCount: number;
   myRole?: string;
+  currentTier?: string;
+  previewTier?: string;
+  willPromote?: boolean;
+  willDemote?: boolean;
 }
 
 export default function ClansPage() {
@@ -179,14 +183,26 @@ export default function ClansPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold">{clan.name}</h3>
-                      <span className={`text-xs px-2 py-1 rounded font-medium ${
-                        clan.tier === 'diamond' ? 'bg-purple-100 text-purple-700' :
-                        clan.tier === 'gold' ? 'bg-yellow-100 text-yellow-700' :
-                        clan.tier === 'silver' ? 'bg-gray-100 text-gray-700' :
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                        {clan.tier.toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-2" title={clan.willPromote ? 'Akan dipromosi jika season berakhir sekarang' : clan.willDemote ? 'Akan didegradasi jika season berakhir sekarang' : 'Tier akan berubah di akhir season'}>
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          (clan.currentTier || clan.tier) === 'diamond' ? 'bg-purple-100 text-purple-700' :
+                          (clan.currentTier || clan.tier) === 'gold' ? 'bg-yellow-100 text-yellow-700' :
+                          (clan.currentTier || clan.tier) === 'silver' ? 'bg-gray-100 text-gray-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {(clan.currentTier || clan.tier).toUpperCase()}
+                        </span>
+                        {clan.willPromote && (
+                          <span className="text-xs text-green-600 font-medium">
+                            → {clan.previewTier?.toUpperCase()} ↑
+                          </span>
+                        )}
+                        {clan.willDemote && (
+                          <span className="text-xs text-red-600 font-medium">
+                            → {clan.previewTier?.toUpperCase()} ↓
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
                       Leader: <Link href={`/profile/${clan.leaderId}`} className="hover:underline">{clan.leaderName}</Link> • {clan.memberCount} anggota
