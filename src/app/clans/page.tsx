@@ -20,6 +20,22 @@ interface Clan {
   previewTier?: string;
   willPromote?: boolean;
   willDemote?: boolean;
+  buffs?: {
+    buffType: string;
+    multiplier: number;
+    activatedAt: string;
+    description: string;
+  }[];
+}
+
+interface ClanBuffsResponse {
+  clanId: string;
+  buffs: {
+    buffType: string;
+    multiplier: number;
+    activatedAt: string;
+    description: string;
+  }[];
 }
 
 export default function ClansPage() {
@@ -30,6 +46,7 @@ export default function ClansPage() {
   const [myClanId, setMyClanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [expandedBuffs, setExpandedBuffs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isLoading) return;
@@ -38,6 +55,18 @@ export default function ClansPage() {
       return;
     }
 
+    const fetchClanBuffs = async (clanId: string): Promise<ClanBuffsResponse | null> => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clans/${clanId}/buffs`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) return res.json();
+      } catch (err) {
+        console.error('Failed to fetch buffs:', err);
+      }
+      return null;
+    };
+
     const fetchClans = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clans`, {
@@ -45,7 +74,14 @@ export default function ClansPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setClans(data);
+          // Fetch buffs for each clan
+          const clansWithBuffs = await Promise.all(
+            data.map(async (clan: Clan) => {
+              const buffsData = await fetchClanBuffs(clan.id);
+              return { ...clan, buffs: buffsData?.buffs || [] };
+            })
+          );
+          setClans(clansWithBuffs);
         } else if (res.status === 401) {
           showToast('Session expired, silakan login ulang', 'error');
           router.push('/login');
@@ -93,8 +129,14 @@ export default function ClansPage() {
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.ok) {
+        const data = await res.json();
+        // OPTIMISTIC UPDATE: Set myClanId immediately from response
+        setMyClanId(data.id);
         showToast('Berhasil bergabung dengan clan!', 'success');
-        router.push('/clans');
+        // Small delay to show the success state before potential redirect
+        setTimeout(() => {
+          router.push('/clans');
+        }, 500);
       } else {
         const data = await res.json().catch(() => ({}));
         showToast(data.error || 'Gagal bergabung', 'error');
@@ -169,6 +211,16 @@ export default function ClansPage() {
           </Link>
         </div>
 
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">💡 Tips Buff</h3>
+          <ul className="text-xs text-blue-700 space-y-1">
+            <li>📈 <strong>Productivity Buff (x1.2):</strong> Aktif saat 50%+ anggota selesaikan misi harian</li>
+            <li>⚠️ <strong>Low Accuracy Penalty (x0.8):</strong> Aktif saat rata-rata akurasi &lt;50%</li>
+            <li>📈 <strong>Consistent Reader Buff (x1.1):</strong> Aktif saat rata-rata akurasi ≥80%</li>
+            <li>⚠️ <strong>Inactive Penalty (x0.9):</strong> Aktif saat &lt;30% anggota aktif dalam 3 hari</li>
+          </ul>
+        </div>
+
         {loading ? (
           <p className="text-slate-500">Memuat...</p>
         ) : clans.length === 0 ? (
@@ -210,6 +262,40 @@ export default function ClansPage() {
                     <p className="text-sm text-slate-500">
                       Skor: {clan.totalScore.toFixed(0)}
                     </p>
+                    {/* Buff Section - Hybrid Display */}
+                    {clan.buffs && clan.buffs.length > 0 && (
+                      <div className="mt-2">
+                        <button
+                          onClick={() => {
+                            const newExpanded = new Set(expandedBuffs);
+                            if (newExpanded.has(clan.id)) {
+                              newExpanded.delete(clan.id);
+                            } else {
+                              newExpanded.add(clan.id);
+                            }
+                            setExpandedBuffs(newExpanded);
+                          }}
+                          className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                        >
+                          📊 Buff Aktif: {clan.buffs.length} aktif
+                          [{expandedBuffs.has(clan.id) ? '▲' : '▼'} Lihat detail]
+                        </button>
+
+                        {expandedBuffs.has(clan.id) && (
+                          <div className="mt-1 pl-2 text-xs text-slate-500">
+                            {clan.buffs.map((buff, idx) => (
+                              <div key={idx} className="flex items-center gap-1">
+                                {buff.multiplier > 1 ? '📈' : buff.multiplier < 1 ? '⚠️' : '📌'}{' '}
+                                <span className="font-medium">
+                                  {buff.buffType.replace(/_/g, ' ')} (x{buff.multiplier})
+                                </span>
+                                {' - '}{buff.description}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
