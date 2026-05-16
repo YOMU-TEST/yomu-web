@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Header from '@/components/Header';
 
 interface UserProfile {
@@ -32,7 +31,7 @@ interface UserProfile {
 }
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default function OtherUserProfilePage({ params }: PageProps) {
@@ -42,15 +41,10 @@ export default function OtherUserProfilePage({ params }: PageProps) {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    params.then((p) => setUserId(p.id)).catch(console.error);
-  }, [params]);
 
   useEffect(() => {
     if (mounted && authLoading) return;
@@ -62,8 +56,10 @@ export default function OtherUserProfilePage({ params }: PageProps) {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
+  const userId = params.id;
+
   useEffect(() => {
-    if (userId && user && token) {
+    if (user && token) {
       setLoading(true);
       setError('');
       fetch(`${apiUrl}/api/users/${userId}/profile`, {
@@ -87,7 +83,17 @@ export default function OtherUserProfilePage({ params }: PageProps) {
           setLoading(false);
         });
     }
-  }, [userId, user, token, apiUrl]);
+  }, [user, token, apiUrl, userId]);
+
+  useEffect(() => {
+    if (mounted && authLoading) return;
+    if (!mounted) return;
+    if (!user) {
+      router.push('/login');
+    }
+  }, [authLoading, mounted, user, router]);
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
   if (!mounted || authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
