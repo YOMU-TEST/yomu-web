@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 
@@ -38,19 +38,18 @@ interface PageProps {
 export default function OtherUserProfilePage({ params }: PageProps) {
   const { user, token, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    params.then(setResolvedParams).catch(console.error);
+    params.then((p) => setUserId(p.id)).catch(console.error);
   }, [params]);
 
   useEffect(() => {
@@ -64,10 +63,10 @@ export default function OtherUserProfilePage({ params }: PageProps) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
   useEffect(() => {
-    if (resolvedParams && user && token) {
+    if (userId && user && token) {
       setLoading(true);
       setError('');
-      fetch(`${apiUrl}/api/users/${resolvedParams.id}/profile`, {
+      fetch(`${apiUrl}/api/users/${userId}/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => {
@@ -88,7 +87,7 @@ export default function OtherUserProfilePage({ params }: PageProps) {
           setLoading(false);
         });
     }
-  }, [resolvedParams, user, token, apiUrl]);
+  }, [userId, user, token, apiUrl]);
 
   if (!mounted || authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
