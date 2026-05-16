@@ -192,12 +192,12 @@ export default function OtherUserProfilePage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Achievements Card */}
+            {/* Achievements Card - only show visible achievements */}
             <div className="bg-white rounded-xl border p-6">
-              <h3 className="text-lg font-semibold mb-4">Achievements ({profileData.achievements?.length || 0})</h3>
-              {profileData.achievements && profileData.achievements.length > 0 ? (
+              <h3 className="text-lg font-semibold mb-4">Achievements ({profileData.achievements?.filter((a: any) => a.visible !== false).length || 0})</h3>
+              {profileData.achievements && profileData.achievements.filter((a: any) => a.visible !== false).length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
-                  {profileData.achievements.map((ach) => (
+                  {profileData.achievements.filter((a: any) => a.visible !== false).map((ach: any) => (
                     <div key={ach.id} className="p-3 bg-amber-50 rounded-lg">
                       <p className="font-medium text-amber-800">{ach.name}</p>
                       <p className="text-xs text-amber-600">
